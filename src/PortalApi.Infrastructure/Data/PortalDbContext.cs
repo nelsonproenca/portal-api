@@ -6,6 +6,7 @@ namespace PortalApi.Infrastructure.Data;
 public class PortalDbContext(DbContextOptions<PortalDbContext> options) : DbContext(options)
 {
     public DbSet<AdminUser> AdminUsers => Set<AdminUser>();
+    public DbSet<Cliente> Clientes => Set<Cliente>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

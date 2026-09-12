@@ -76,6 +76,9 @@ using (var scope = app.Services.CreateScope())
 if (args.Length > 0 && args[0] == "seed-admin")
     return await SeedAdminCommand.RunAsync(args, app.Services);
 
+if (args.Length > 0 && args[0] == "import-clientes")
+    return await ImportClientesCommand.RunAsync(args, app.Services);
+
 // ─── Middleware pipeline ──────────────────────────────────────────────────────
 
 app.UseRateLimiter();
@@ -108,6 +111,7 @@ app.MapGet("/health", async (PortalDbContext db, CancellationToken ct) =>
 .WithName("HealthCheck");
 
 app.MapAuthEndpoints();
+app.MapClienteEndpoints();
 
 app.Run();
 return 0;

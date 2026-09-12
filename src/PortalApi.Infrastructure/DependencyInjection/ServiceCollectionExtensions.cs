@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using PortalApi.Application.Auth;
+using PortalApi.Application.Clientes;
 using PortalApi.Infrastructure.Data;
 using PortalApi.Infrastructure.Security;
 
@@ -28,6 +29,9 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IAdminUserRepository, AdminUserRepository>();
         services.AddSingleton<IPasswordHasher, BCryptPasswordHasher>();
         services.AddScoped<AdminAuthService>();
+
+        services.AddScoped<IClienteRepository, ClienteRepository>();
+        services.AddScoped<ClienteService>();
 
         return services;
     }
