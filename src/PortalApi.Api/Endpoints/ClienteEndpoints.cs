@@ -1,3 +1,4 @@
+using PortalApi.Api.Extensions;
 using PortalApi.Api.Filters;
 using PortalApi.Application.Clientes;
 
@@ -34,5 +35,18 @@ public static class ClienteEndpoints
         group.MapGet("/public", async (ClienteService service, CancellationToken ct) =>
             Results.Ok(await service.ListByStatusAsync("ativo", ct)))
         .AllowAnonymous();
+
+        // Cliente (portal, ticket #19): resolve o próprio registro de cliente a
+        // partir do e-mail do JWT do Supabase — equivalente ao antigo
+        // `supabase.from("clientes").select().eq("email", session.email)`.
+        group.MapGet("/me", async (HttpContext http, ClienteService service, CancellationToken ct) =>
+        {
+            var email = http.User.GetEmail();
+            if (email is null) return Results.Unauthorized();
+
+            var cliente = await service.GetByEmailAsync(email, ct);
+            return cliente is null ? Results.NotFound() : Results.Ok(cliente);
+        })
+        .RequireAuthorization("AdminOrClient");
     }
 }

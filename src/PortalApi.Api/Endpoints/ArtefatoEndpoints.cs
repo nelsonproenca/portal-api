@@ -1,5 +1,7 @@
+using PortalApi.Api.Extensions;
 using PortalApi.Api.Filters;
 using PortalApi.Application.Artefatos;
+using PortalApi.Application.Portal;
 
 namespace PortalApi.Api.Endpoints;
 
@@ -9,9 +11,19 @@ public static class ArtefatoEndpoints
     {
         var group = app.MapGroup("/artefatos");
 
-        group.MapGet("/", async (Guid projetoId, ArtefatoService service, CancellationToken ct) =>
-            Results.Ok(await service.ListByProjetoAsync(projetoId, ct)))
-        .RequireAuthorization();
+        // Admin OU cliente dono do projeto (ticket #19).
+        group.MapGet("/", async (Guid projetoId, HttpContext http, ArtefatoService service, ClientAccessService access, CancellationToken ct) =>
+        {
+            if (!http.User.IsAdmin())
+            {
+                var email = http.User.GetEmail();
+                if (email is null || !await access.OwnsProjetoAsync(email, projetoId, ct))
+                    return Results.Ok(Array.Empty<object>());
+            }
+
+            return Results.Ok(await service.ListByProjetoAsync(projetoId, ct));
+        })
+        .RequireAuthorization("AdminOrClient");
 
         group.MapPost("/link", async (CreateArtefatoLinkRequest request, ArtefatoService service, CancellationToken ct) =>
         {
@@ -50,12 +62,20 @@ public static class ArtefatoEndpoints
         .RequireAuthorization();
 
         // Emite a URL de acesso (link direto, ou path com token assinado pra arquivo).
-        group.MapGet("/{id:guid}/signed-url", async (Guid id, ArtefatoService service, CancellationToken ct) =>
+        // Admin OU cliente dono do projeto do artefato (ticket #19).
+        group.MapGet("/{id:guid}/signed-url", async (Guid id, HttpContext http, ArtefatoService service, ClientAccessService access, CancellationToken ct) =>
         {
+            if (!http.User.IsAdmin())
+            {
+                var email = http.User.GetEmail();
+                if (email is null || !await access.OwnsArtefatoAsync(email, id, ct))
+                    return Results.NotFound();
+            }
+
             var url = await service.GetAccessUrlAsync(id, ct);
             return url is null ? Results.NotFound() : Results.Ok(new { url });
         })
-        .RequireAuthorization();
+        .RequireAuthorization("AdminOrClient");
 
         // Download em si — a autorização é o token assinado (curta duração), não a
         // sessão do admin, porque signed URLs precisam funcionar numa nova aba/download

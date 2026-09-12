@@ -10,6 +10,12 @@ public class ClienteService(IClienteRepository repository)
     public async Task<IReadOnlyList<ClienteDto>> ListAllAsync(CancellationToken ct) =>
         (await repository.GetAllAsync(ct)).Select(ToDto).ToList();
 
+    public async Task<ClienteDto?> GetByEmailAsync(string email, CancellationToken ct)
+    {
+        var cliente = await repository.GetByEmailAsync(email, ct);
+        return cliente is null ? null : ToDto(cliente);
+    }
+
     public async Task<IReadOnlyList<ClienteDto>> ListByStatusAsync(string status, CancellationToken ct) =>
         (await repository.GetByStatusAsync(status, ct)).Select(ToDto).ToList();
 

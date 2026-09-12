@@ -1,7 +1,9 @@
 using System.Threading.RateLimiting;
 using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
 using PortalApi.Api;
 using PortalApi.Api.Endpoints;
 using PortalApi.Infrastructure.Data;
@@ -10,9 +12,11 @@ using Scalar.AspNetCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// ─── Auth (cookie httpOnly — sessão do admin, ver ticket #14) ──────────────────
+// ─── Auth ─────────────────────────────────────────────────────────────────────
 
-builder.Services
+// Admin: cookie httpOnly (ver ticket #14) — continua o esquema default (usado
+// por login/logout/me e por todo endpoint de escrita do admin).
+var authBuilder = builder.Services
     .AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
     .AddCookie(options =>
     {
@@ -28,7 +32,35 @@ builder.Services
         options.Events.OnRedirectToAccessDenied = ctx => { ctx.Response.StatusCode = StatusCodes.Status403Forbidden; return Task.CompletedTask; };
     });
 
-builder.Services.AddAuthorization();
+// Cliente (portal do cliente, ticket #19): valida o JWT que o Supabase Auth já
+// emite pro magic-link — mesmo padrão do WatchtowerApi.Api/Program.cs. O
+// frontend continua usando supabase.auth.* sem mudança nenhuma; só o backend
+// passa a aceitar esse token também.
+var supabaseUrl = builder.Configuration["Supabase:Url"];
+if (string.IsNullOrWhiteSpace(supabaseUrl))
+    throw new InvalidOperationException("Supabase:Url está vazio ou ausente. Preencha em appsettings.Production.json / .env.");
+
+authBuilder.AddJwtBearer("SupabaseJwt", options =>
+{
+    options.Authority = $"{supabaseUrl.TrimEnd('/')}/auth/v1";
+    options.Audience = builder.Configuration["Supabase:JwtAudience"] ?? "authenticated";
+    options.RequireHttpsMetadata = true;
+    options.TokenValidationParameters = new TokenValidationParameters
+    {
+        ValidateLifetime = true,
+        ClockSkew = TimeSpan.FromSeconds(30),
+    };
+});
+
+builder.Services.AddAuthorization(options =>
+{
+    // Endpoints de leitura que tanto o admin quanto um cliente autenticado podem
+    // chamar — a distinção de "o que cada um pode ver" é feita dentro do handler
+    // (ClientAccessService), não aqui.
+    options.AddPolicy("AdminOrClient", policy => policy
+        .AddAuthenticationSchemes(CookieAuthenticationDefaults.AuthenticationScheme, "SupabaseJwt")
+        .RequireAuthenticatedUser());
+});
 
 // ─── Rate limiting (login do admin — ver ticket #14) ───────────────────────────
 

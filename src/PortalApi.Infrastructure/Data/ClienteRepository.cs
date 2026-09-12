@@ -18,6 +18,9 @@ public class ClienteRepository(PortalDbContext db) : IClienteRepository
     public Task<Cliente?> GetByIdAsync(Guid id, CancellationToken ct) =>
         db.Clientes.FirstOrDefaultAsync(c => c.Id == id, ct);
 
+    public Task<Cliente?> GetByEmailAsync(string email, CancellationToken ct) =>
+        db.Clientes.AsNoTracking().FirstOrDefaultAsync(c => c.Email == email, ct);
+
     public async Task AddAsync(Cliente cliente, CancellationToken ct)
     {
         db.Clientes.Add(cliente);

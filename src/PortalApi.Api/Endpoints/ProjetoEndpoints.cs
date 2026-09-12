@@ -1,4 +1,6 @@
+using PortalApi.Api.Extensions;
 using PortalApi.Api.Filters;
+using PortalApi.Application.Portal;
 using PortalApi.Application.Projetos;
 
 namespace PortalApi.Api.Endpoints;
@@ -14,12 +16,34 @@ public static class ProjetoEndpoints
             Results.Ok(await service.ListAllAsync(ct)))
         .RequireAuthorization();
 
-        group.MapGet("/{id:guid}", async (Guid id, ProjetoService service, CancellationToken ct) =>
+        // Admin OU cliente dono do projeto (ticket #19) — mesma regra de
+        // `scope_projetos_select_by_client_identity.sql`: admin vê qualquer um,
+        // cliente só o seu (senão 404 — não revela que o projeto existe).
+        group.MapGet("/{id:guid}", async (Guid id, HttpContext http, ProjetoService service, ClientAccessService access, CancellationToken ct) =>
         {
+            if (!http.User.IsAdmin())
+            {
+                var email = http.User.GetEmail();
+                if (email is null || !await access.OwnsProjetoAsync(email, id, ct))
+                    return Results.NotFound();
+            }
+
             var projeto = await service.GetAsync(id, ct);
             return projeto is null ? Results.NotFound() : Results.Ok(projeto);
         })
-        .RequireAuthorization();
+        .RequireAuthorization("AdminOrClient");
+
+        // Cliente (portal): só os projetos do próprio e-mail — substitui o antigo
+        // `supabase.from("projetos").eq("cliente_id", ...)` que confiava num id
+        // vindo do cliente; aqui o id é resolvido a partir do JWT no servidor.
+        group.MapGet("/mine", async (HttpContext http, ClientAccessService access, CancellationToken ct) =>
+        {
+            var email = http.User.GetEmail();
+            if (email is null) return Results.Unauthorized();
+
+            return Results.Ok(await access.ListProjetosDoEmailAsync(email, ct));
+        })
+        .RequireAuthorization("AdminOrClient");
 
         group.MapPost("/", async (UpsertProjetoRequest request, ProjetoService service, CancellationToken ct) =>
         {
