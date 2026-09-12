@@ -150,6 +150,7 @@ app.MapClienteEndpoints();
 app.MapProjetoEndpoints();
 app.MapEtapaEndpoints();
 app.MapArtefatoEndpoints();
+app.MapPedidoEndpoints();
 
 app.Run();
 return 0;

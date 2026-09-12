@@ -1,16 +1,21 @@
 using PortalApi.Application.Artefatos;
 using PortalApi.Application.Clientes;
+using PortalApi.Application.Pedidos;
 using PortalApi.Application.Projetos;
 
 namespace PortalApi.Application.Portal;
 
 /// <summary>
-/// Mecanismo único de escopo do cliente autenticado (ticket #19) — substitui as
-/// policies de RLS `scope_projetos_select_by_client_identity` /
+/// Mecanismo único de escopo do cliente autenticado (tickets #19/#20) — substitui
+/// as policies de RLS `scope_projetos_select_by_client_identity` /
 /// `scope_etapas_artefatos_select_by_client_identity` do Postgres original.
 /// Reutilizado por todo endpoint que precisa aceitar admin OU cliente.
 /// </summary>
-public class ClientAccessService(IClienteRepository clientes, IProjetoRepository projetos, IArtefatoRepository artefatos)
+public class ClientAccessService(
+    IClienteRepository clientes,
+    IProjetoRepository projetos,
+    IArtefatoRepository artefatos,
+    IPedidoRepository pedidos)
 {
     public async Task<IReadOnlyList<ProjetoDto>> ListProjetosDoEmailAsync(string email, CancellationToken ct)
     {
@@ -38,5 +43,12 @@ public class ClientAccessService(IClienteRepository clientes, IProjetoRepository
     {
         var artefato = await artefatos.GetByIdAsync(artefatoId, ct);
         return artefato is not null && await OwnsProjetoAsync(email, artefato.ProjetoId, ct);
+    }
+
+    /// <summary>True se o e-mail dado for dono (via o projeto do pedido) do pedido dado.</summary>
+    public async Task<bool> OwnsPedidoAsync(string email, Guid pedidoId, CancellationToken ct)
+    {
+        var pedido = await pedidos.GetByIdAsync(pedidoId, ct);
+        return pedido is not null && await OwnsProjetoAsync(email, pedido.ProjetoId, ct);
     }
 }

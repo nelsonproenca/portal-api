@@ -5,6 +5,7 @@ using PortalApi.Application.Artefatos;
 using PortalApi.Application.Auth;
 using PortalApi.Application.Clientes;
 using PortalApi.Application.Etapas;
+using PortalApi.Application.Pedidos;
 using PortalApi.Application.Portal;
 using PortalApi.Application.Projetos;
 using PortalApi.Application.Storage;
@@ -42,6 +43,10 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IProjetoRepository, ProjetoRepository>();
         services.AddScoped<ProjetoService>();
         services.AddScoped<ClientAccessService>();
+
+        services.AddScoped<IPedidoRepository, PedidoRepository>();
+        services.AddScoped<IPedidoRespostaRepository, PedidoRespostaRepository>();
+        services.AddScoped<PedidoService>();
 
         services.AddScoped<IEtapaRepository, EtapaRepository>();
         services.AddScoped<EtapaService>();
