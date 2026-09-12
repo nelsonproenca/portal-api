@@ -3,6 +3,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using PortalApi.Application.Auth;
 using PortalApi.Application.Clientes;
+using PortalApi.Application.Projetos;
 using PortalApi.Infrastructure.Data;
 using PortalApi.Infrastructure.Security;
 
@@ -32,6 +33,9 @@ public static class ServiceCollectionExtensions
 
         services.AddScoped<IClienteRepository, ClienteRepository>();
         services.AddScoped<ClienteService>();
+
+        services.AddScoped<IProjetoRepository, ProjetoRepository>();
+        services.AddScoped<ProjetoService>();
 
         return services;
     }
