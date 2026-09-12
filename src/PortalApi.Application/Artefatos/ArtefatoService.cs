@@ -1,3 +1,4 @@
+using PortalApi.Application.Email;
 using PortalApi.Application.Storage;
 using PortalApi.Domain.Entities;
 using PortalApi.Domain.Enums;
@@ -7,7 +8,8 @@ namespace PortalApi.Application.Artefatos;
 public class ArtefatoService(
     IArtefatoRepository repository,
     IFileStorageService storage,
-    IDownloadTokenService tokenService)
+    IDownloadTokenService tokenService,
+    PortfolioNotificationService notifications)
 {
     public const long MaxFileSizeBytes = 10 * 1024 * 1024; // 10MB
 
@@ -42,6 +44,7 @@ public class ArtefatoService(
             CreatedAt = DateTimeOffset.UtcNow,
         };
         await repository.AddAsync(artefato, ct);
+        await notifications.NotifyNovoArtefatoAsync(artefato.ProjetoId, artefato.Nome, ct);
         return ToDto(artefato);
     }
 
@@ -62,6 +65,7 @@ public class ArtefatoService(
             CreatedAt = DateTimeOffset.UtcNow,
         };
         await repository.AddAsync(artefato, ct);
+        await notifications.NotifyNovoArtefatoAsync(artefato.ProjetoId, artefato.Nome, ct);
         return ToDto(artefato);
     }
 

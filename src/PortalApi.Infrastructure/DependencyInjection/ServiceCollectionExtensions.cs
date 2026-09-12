@@ -1,15 +1,19 @@
+using System.Net.Http.Headers;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Options;
 using PortalApi.Application.Artefatos;
 using PortalApi.Application.Auth;
 using PortalApi.Application.Clientes;
+using PortalApi.Application.Email;
 using PortalApi.Application.Etapas;
 using PortalApi.Application.Pedidos;
 using PortalApi.Application.Portal;
 using PortalApi.Application.Projetos;
 using PortalApi.Application.Storage;
 using PortalApi.Infrastructure.Data;
+using PortalApi.Infrastructure.Email;
 using PortalApi.Infrastructure.Security;
 using PortalApi.Infrastructure.Storage;
 
@@ -56,6 +60,14 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<IDownloadTokenService, JwtDownloadTokenService>();
         services.AddScoped<IArtefatoRepository, ArtefatoRepository>();
         services.AddScoped<ArtefatoService>();
+
+        services.Configure<ResendOptions>(configuration.GetSection(ResendOptions.SectionName));
+        services.AddHttpClient<IEmailService, ResendEmailService>((sp, client) =>
+        {
+            var apiKey = sp.GetRequiredService<IOptions<ResendOptions>>().Value.ApiKey;
+            client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", apiKey);
+        });
+        services.AddScoped<PortfolioNotificationService>();
 
         return services;
     }

@@ -32,6 +32,7 @@ services:
       ConnectionStrings__PortalDb: "Server=portal-mysql;Port=3306;Database=${MYSQL_DATABASE};User=${MYSQL_USER};Password=${MYSQL_PASSWORD};"
       Storage__ArtefatosRoot: /app/storage/artefatos
       Storage__DownloadTokenSecret: ${DOWNLOAD_TOKEN_SECRET}
+      Resend__ApiKey: ${RESEND_API_KEY}
     volumes:
       - portal-artefatos-data:/app/storage/artefatos
     networks:

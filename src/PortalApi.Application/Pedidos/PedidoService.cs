@@ -1,4 +1,5 @@
 using PortalApi.Application.Artefatos;
+using PortalApi.Application.Email;
 using PortalApi.Application.Storage;
 using PortalApi.Domain.Entities;
 using PortalApi.Domain.Enums;
@@ -8,7 +9,8 @@ namespace PortalApi.Application.Pedidos;
 public class PedidoService(
     IPedidoRepository pedidos,
     IPedidoRespostaRepository respostas,
-    IFileStorageService storage)
+    IFileStorageService storage,
+    PortfolioNotificationService notifications)
 {
     private static PedidoDto ToDto(Pedido p) =>
         new(p.Id, p.ProjetoId, p.EtapaId, p.Tipo.ToString(), p.Titulo, p.Status.ToString(), p.CreatedAt);
@@ -33,6 +35,7 @@ public class PedidoService(
             CreatedAt = DateTimeOffset.UtcNow,
         };
         await pedidos.AddAsync(pedido, ct);
+        await notifications.NotifyNovoPedidoAsync(pedido.ProjetoId, pedido.Titulo, ct);
         return ToDto(pedido);
     }
 
@@ -70,6 +73,7 @@ public class PedidoService(
         pedido.Status = PedidoStatus.respondido;
         await pedidos.SaveChangesAsync(ct);
 
+        await notifications.NotifyPedidoRespondidoAsync(projetoId, texto, ct);
         return (ToDto(resposta), null);
     }
 
@@ -90,6 +94,7 @@ public class PedidoService(
         pedido.Status = PedidoStatus.aprovado;
         await pedidos.SaveChangesAsync(ct);
 
+        await notifications.NotifyPedidoDecididoAsync(pedido.ProjetoId, $"Aprovado: {resposta.Texto}", ct);
         return ToDto(resposta);
     }
 
@@ -113,6 +118,7 @@ public class PedidoService(
         pedido.Status = PedidoStatus.ajuste_solicitado;
         await pedidos.SaveChangesAsync(ct);
 
+        await notifications.NotifyPedidoDecididoAsync(pedido.ProjetoId, $"Ajuste solicitado: {resposta.Texto}", ct);
         return (ToDto(resposta), null);
     }
 }
