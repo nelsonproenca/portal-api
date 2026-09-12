@@ -43,25 +43,35 @@ dotnet ef database update --project src/PortalApi.Infrastructure --startup-proje
 ## Deploy
 
 Roda na VPS (209.61.37.142) via `docker-compose.yml` deste repo — dois containers (`portal-api` +
-`portal-mysql`), independentes da stack Docker/Caddy do Watchtower (que continua com seu próprio
-banco Postgres/Supabase, sem relação com este).
+`portal-mysql`). O Caddy real da VPS não é do Watchtower — é um container (`n8n-caddy-1`) definido em
+`/opt/n8n/docker-compose.yml`, na rede Docker `n8n_default`, e alcança outros serviços pelo **nome do
+container**, não por `localhost` (é assim que ele já fala com `watchtower-stack-watchtower-api-1:5000`
+hoje). Por isso `portal-api` entra também na rede `n8n_default` (externa, `networks: n8n_default:
+external: true` no compose) — o Caddy passa a alcançá-lo em `portal-api:8080`.
 
-- Na VPS: `git clone` deste repo, criar `.env` (nunca commitado — mesmas chaves do `.env.example`,
-  com senhas de produção reais), `docker compose up -d --build`
-- `portal-api` expõe `127.0.0.1:5299` (loopback only) — o Caddy que já roda na VPS faz reverse proxy
-  pra lá e cuida do domínio/TLS
-- Exposto publicamente em `nelson-proenca-info.com.br/api/portal/*` — o Caddy deve usar
-  `handle_path /api/portal/*` (remove o prefixo antes de repassar), já que as rotas da API não
-  conhecem esse prefixo (ex: o health check é só `/health`, não `/api/portal/health`)
-- `portal-mysql` não expõe porta pro host — só o `portal-api` acessa, via rede interna do compose
+- Na VPS: clonar este repo, criar `.env` (nunca commitado — mesmas chaves do `.env.example`, com
+  senhas de produção reais), `docker compose up -d --build`
+- `portal-mysql` não entra na rede `n8n_default` — só `portal-api` acessa, via rede interna (default)
+  do próprio compose. Isolado de qualquer outro stack da VPS.
+- No Caddyfile (`/opt/n8n/Caddyfile`), dentro do bloco `www.nelson-proenca-info.com.br { ... }`
+  (mesmo padrão dos blocos `handle /api/*` e `handle /hls/*` já existentes ali):
+
+  ```caddy
+  handle_path /api/portal/* {
+      reverse_proxy portal-api:8080
+  }
+  ```
+
+  `handle_path` (não `handle`) porque as rotas da API não conhecem esse prefixo — o health check é
+  `/health`, não `/api/portal/health`. Depois de editar, `docker restart n8n-caddy-1` (ou
+  `docker compose restart caddy` de dentro de `/opt/n8n`) pra recarregar.
 - Dado persiste em volume Docker nomeado (`portal-mysql-data`) — sobrevive a `docker compose down`
   (sem `-v`) e a updates da imagem
 
 ### Pendências de infraestrutura (fora do que este código resolve sozinho)
 
 - Clonar o repo na VPS e criar o `.env` de produção com senhas reais
-- Adicionar o bloco de rota no Caddy existente na VPS (sem compose/Caddyfile versionado neste repo
-  pro Watchtower — feito direto por SSH, como já acontece com o `watchtower-api`)
+- Adicionar o bloco `handle_path /api/portal/*` no `/opt/n8n/Caddyfile` (acima) e reiniciar o Caddy
 - O volume `portal-mysql-data` fica no disco da própria VPS, então o snapshot/backup de máquina
   inteira que o provedor da VPS já faz (mesma decisão tomada pra `artefatos` na spec) cobre o banco
   também — confirmar que isso realmente inclui volumes Docker, não só o filesystem "principal"

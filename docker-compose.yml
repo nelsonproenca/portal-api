@@ -22,6 +22,7 @@ services:
 
   portal-api:
     build: .
+    container_name: portal-api
     restart: unless-stopped
     depends_on:
       portal-mysql:
@@ -29,10 +30,18 @@ services:
     environment:
       ASPNETCORE_ENVIRONMENT: Production
       ConnectionStrings__PortalDb: "Server=portal-mysql;Port=3306;Database=${MYSQL_DATABASE};User=${MYSQL_USER};Password=${MYSQL_PASSWORD};"
+    networks:
+      - default
+      - n8n_default
     ports:
-      # Só em loopback — o Caddy (rodando na mesma VPS, fora deste compose) faz
-      # reverse proxy pra 127.0.0.1:5299 e cuida do domínio/TLS.
+      # Loopback — só pra debug direto na VPS (curl/exec). O Caddy roda em
+      # container na rede n8n_default e alcança este serviço por nome
+      # (portal-api:8080), não por essa porta publicada.
       - "127.0.0.1:5299:8080"
+
+networks:
+  n8n_default:
+    external: true
 
 volumes:
   portal-mysql-data:
