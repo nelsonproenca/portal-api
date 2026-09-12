@@ -30,6 +30,10 @@ services:
     environment:
       ASPNETCORE_ENVIRONMENT: Production
       ConnectionStrings__PortalDb: "Server=portal-mysql;Port=3306;Database=${MYSQL_DATABASE};User=${MYSQL_USER};Password=${MYSQL_PASSWORD};"
+      Storage__ArtefatosRoot: /app/storage/artefatos
+      Storage__DownloadTokenSecret: ${DOWNLOAD_TOKEN_SECRET}
+    volumes:
+      - portal-artefatos-data:/app/storage/artefatos
     networks:
       - default
       - n8n_default
@@ -45,3 +49,4 @@ networks:
 
 volumes:
   portal-mysql-data:
+  portal-artefatos-data:

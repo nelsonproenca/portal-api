@@ -117,6 +117,7 @@ app.MapAuthEndpoints();
 app.MapClienteEndpoints();
 app.MapProjetoEndpoints();
 app.MapEtapaEndpoints();
+app.MapArtefatoEndpoints();
 
 app.Run();
 return 0;

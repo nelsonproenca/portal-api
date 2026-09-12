@@ -1,12 +1,15 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using PortalApi.Application.Artefatos;
 using PortalApi.Application.Auth;
 using PortalApi.Application.Clientes;
 using PortalApi.Application.Etapas;
 using PortalApi.Application.Projetos;
+using PortalApi.Application.Storage;
 using PortalApi.Infrastructure.Data;
 using PortalApi.Infrastructure.Security;
+using PortalApi.Infrastructure.Storage;
 
 namespace PortalApi.Infrastructure.DependencyInjection;
 
@@ -40,6 +43,12 @@ public static class ServiceCollectionExtensions
 
         services.AddScoped<IEtapaRepository, EtapaRepository>();
         services.AddScoped<EtapaService>();
+
+        services.Configure<StorageOptions>(configuration.GetSection(StorageOptions.SectionName));
+        services.AddSingleton<IFileStorageService, LocalFileStorageService>();
+        services.AddSingleton<IDownloadTokenService, JwtDownloadTokenService>();
+        services.AddScoped<IArtefatoRepository, ArtefatoRepository>();
+        services.AddScoped<ArtefatoService>();
 
         return services;
     }
