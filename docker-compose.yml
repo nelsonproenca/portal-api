@@ -1,0 +1,38 @@
+services:
+  portal-mysql:
+    image: mysql:8.0
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+    volumes:
+      - portal-mysql-data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${MYSQL_ROOT_PASSWORD}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    ports:
+      # Loopback only — permite "dotnet run" no host (fora do compose) alcançar localhost:3306
+      # em dev. Em produção o portal-api já acessa via rede interna do compose (nome do serviço);
+      # essa porta em loopback não é usada lá, mas expô-la não amplia o risco (só same-machine).
+      - "127.0.0.1:3306:3306"
+
+  portal-api:
+    build: .
+    restart: unless-stopped
+    depends_on:
+      portal-mysql:
+        condition: service_healthy
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      ConnectionStrings__PortalDb: "Server=portal-mysql;Port=3306;Database=${MYSQL_DATABASE};User=${MYSQL_USER};Password=${MYSQL_PASSWORD};"
+    ports:
+      # Só em loopback — o Caddy (rodando na mesma VPS, fora deste compose) faz
+      # reverse proxy pra 127.0.0.1:5299 e cuida do domínio/TLS.
+      - "127.0.0.1:5299:8080"
+
+volumes:
+  portal-mysql-data:
