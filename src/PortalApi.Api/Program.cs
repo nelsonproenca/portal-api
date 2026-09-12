@@ -116,6 +116,7 @@ app.MapGet("/health", async (PortalDbContext db, CancellationToken ct) =>
 app.MapAuthEndpoints();
 app.MapClienteEndpoints();
 app.MapProjetoEndpoints();
+app.MapEtapaEndpoints();
 
 app.Run();
 return 0;

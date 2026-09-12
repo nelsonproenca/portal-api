@@ -8,6 +8,7 @@ public class PortalDbContext(DbContextOptions<PortalDbContext> options) : DbCont
     public DbSet<AdminUser> AdminUsers => Set<AdminUser>();
     public DbSet<Cliente> Clientes => Set<Cliente>();
     public DbSet<Projeto> Projetos => Set<Projeto>();
+    public DbSet<Etapa> Etapas => Set<Etapa>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
