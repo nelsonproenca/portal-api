@@ -51,7 +51,18 @@ public static class AuthEndpoints
             Results.Ok(new { email = user.FindFirstValue(ClaimTypes.Email) }))
         .WithName("AdminMe")
         .RequireAuthorization();
+
+        group.MapPost("/change-password", async (ChangePasswordRequest request, ClaimsPrincipal user, AdminAuthService authService, CancellationToken ct) =>
+        {
+            var adminId = Guid.Parse(user.FindFirstValue(ClaimTypes.NameIdentifier)!);
+            var ok = await authService.ChangePasswordAsync(adminId, request.CurrentPassword, request.NewPassword, ct);
+            return ok ? Results.Ok() : Results.BadRequest(new { error = "Senha atual incorreta." });
+        })
+        .WithName("AdminChangePassword")
+        .AddEndpointFilter<AdminCsrfEndpointFilter>()
+        .RequireAuthorization();
     }
 
     public record LoginRequest(string Password);
+    public record ChangePasswordRequest(string CurrentPassword, string NewPassword);
 }
