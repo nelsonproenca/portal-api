@@ -19,6 +19,14 @@ services:
       # em dev. Em produção o portal-api já acessa via rede interna do compose (nome do serviço);
       # essa porta em loopback não é usada lá, mas expô-la não amplia o risco (só same-machine).
       - "127.0.0.1:3306:3306"
+    networks:
+      # default: rede implícita deste compose, onde o portal-api já fala com este container.
+      # beautyhairapp_shared: reaproveitado pelo beautyhairapp-api (banco próprio dentro deste
+      # mesmo container MySQL, decisão de 14/09/2026 — ver saas/beautyhairapp/PRODUCT.md) — rede
+      # dedicada só pra isso, em vez de expor o MySQL na n8n_default (que teria n8n/claw3d/
+      # openclaw como vizinhos sem necessidade de falar com o banco).
+      - default
+      - beautyhairapp_shared
 
   portal-api:
     build: .
@@ -47,6 +55,10 @@ services:
 networks:
   n8n_default:
     external: true
+  # Declarada (não external) aqui — este compose é o "dono" dela. O compose do
+  # beautyhairapp-api referencia como external:true; precisa que este suba primeiro.
+  beautyhairapp_shared:
+    name: beautyhairapp_shared
 
 volumes:
   portal-mysql-data:
