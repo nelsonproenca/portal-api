@@ -13,8 +13,8 @@ public class ProjetoService(IProjetoRepository repository)
     public async Task<IReadOnlyList<ProjetoDto>> ListAllAsync(CancellationToken ct) =>
         (await repository.GetAllAsync(ct)).Select(ToDto).ToList();
 
-    public async Task<IReadOnlyList<ProjetoDto>> ListPublicosAsync(string? statusPublico, CancellationToken ct) =>
-        (await repository.GetPublicosAsync(statusPublico, ct)).Select(ToDto).ToList();
+    public async Task<IReadOnlyList<ProjetoDto>> ListPublicosAsync(string? statusPublico, Guid? clienteId, CancellationToken ct) =>
+        (await repository.GetPublicosAsync(statusPublico, clienteId, ct)).Select(ToDto).ToList();
 
     public async Task<ProjetoDto?> GetAsync(Guid id, CancellationToken ct)
     {

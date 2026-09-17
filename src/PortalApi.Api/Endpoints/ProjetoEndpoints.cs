@@ -53,9 +53,11 @@ public static class ProjetoEndpoints
         .AddEndpointFilter<AdminCsrfEndpointFilter>()
         .RequireAuthorization();
 
-        // Público — só projetos com visibilidade=publico.
-        group.MapGet("/public", async (string? status, ProjetoService service, CancellationToken ct) =>
-            Results.Ok(await service.ListPublicosAsync(status, ct)))
+        // Público — só projetos com visibilidade=publico. clienteId opcional filtra
+        // pra vitrine de projetos de um cliente específico (link a partir do card
+        // dele em /clientes — ver Clientes.tsx).
+        group.MapGet("/public", async (string? status, Guid? clienteId, ProjetoService service, CancellationToken ct) =>
+            Results.Ok(await service.ListPublicosAsync(status, clienteId, ct)))
         .AllowAnonymous();
 
         group.MapGet("/public/{id:guid}", async (Guid id, ProjetoService service, CancellationToken ct) =>

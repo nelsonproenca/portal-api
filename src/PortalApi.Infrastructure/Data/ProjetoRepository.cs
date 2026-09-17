@@ -10,12 +10,15 @@ public class ProjetoRepository(PortalDbContext db) : IProjetoRepository
     public async Task<IReadOnlyList<Projeto>> GetAllAsync(CancellationToken ct) =>
         await db.Projetos.AsNoTracking().OrderByDescending(p => p.CreatedAt).ToListAsync(ct);
 
-    public async Task<IReadOnlyList<Projeto>> GetPublicosAsync(string? statusPublico, CancellationToken ct)
+    public async Task<IReadOnlyList<Projeto>> GetPublicosAsync(string? statusPublico, Guid? clienteId, CancellationToken ct)
     {
         var query = db.Projetos.AsNoTracking().Where(p => p.Visibilidade == Visibilidade.publico);
 
         if (!string.IsNullOrWhiteSpace(statusPublico) && Enum.TryParse<StatusPublico>(statusPublico, out var status))
             query = query.Where(p => p.StatusPublico == status);
+
+        if (clienteId.HasValue)
+            query = query.Where(p => p.ClienteId == clienteId.Value);
 
         return await query.OrderByDescending(p => p.CreatedAt).ToListAsync(ct);
     }
