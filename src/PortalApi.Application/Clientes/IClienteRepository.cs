@@ -11,7 +11,4 @@ public interface IClienteRepository
     Task AddAsync(Cliente cliente, CancellationToken ct);
     Task UpdateAsync(Cliente cliente, CancellationToken ct);
 
-    /// <summary>Upsert por Id — usado só pelo backfill (ticket #15), pra preservar os
-    /// IDs dos clientes que já existiam no Supabase.</summary>
-    Task UpsertPreservingIdAsync(Cliente cliente, CancellationToken ct);
 }

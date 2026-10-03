@@ -39,10 +39,18 @@ services:
       ASPNETCORE_ENVIRONMENT: Production
       ConnectionStrings__PortalDb: "Server=portal-mysql;Port=3306;Database=${MYSQL_DATABASE};User=${MYSQL_USER};Password=${MYSQL_PASSWORD};"
       Storage__ArtefatosRoot: /app/storage/artefatos
+      Storage__UploadsRoot: /app/storage/uploads
       Storage__DownloadTokenSecret: ${DOWNLOAD_TOKEN_SECRET}
+      # Link de login do portal do cliente: endereço público do site, usado no e-mail enviado pelo Resend.
+      ClienteLogin__PortalBaseUrl: https://www.nelson-proenca-info.com.br
       Resend__ApiKey: ${RESEND_API_KEY}
+      # n8n do site: o portal-api avisa os webhooks (rede n8n_default) e o n8n devolve o resultado por
+      # callback com o mesmo segredo (header X-Webhook-Secret). Sem o segredo, avisos e callbacks ficam desligados.
+      N8n__BaseUrl: http://n8n:5678
+      N8n__WebhookSecret: ${N8N_WEBHOOK_SECRET:-}
     volumes:
       - portal-artefatos-data:/app/storage/artefatos
+      - portal-uploads-data:/app/storage/uploads
     networks:
       - default
       - n8n_default
@@ -63,3 +71,4 @@ networks:
 volumes:
   portal-mysql-data:
   portal-artefatos-data:
+  portal-uploads-data:

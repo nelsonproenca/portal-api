@@ -31,24 +31,4 @@ public class ClienteRepository(PortalDbContext db) : IClienteRepository
     {
         await db.SaveChangesAsync(ct);
     }
-
-    public async Task UpsertPreservingIdAsync(Cliente cliente, CancellationToken ct)
-    {
-        var existing = await db.Clientes.FirstOrDefaultAsync(c => c.Id == cliente.Id, ct);
-        if (existing is null)
-        {
-            db.Clientes.Add(cliente);
-        }
-        else
-        {
-            existing.Nome = cliente.Nome;
-            existing.Email = cliente.Email;
-            existing.Empresa = cliente.Empresa;
-            existing.Segmento = cliente.Segmento;
-            existing.SiteUrl = cliente.SiteUrl;
-            existing.LogoUrl = cliente.LogoUrl;
-            existing.Status = cliente.Status;
-        }
-        await db.SaveChangesAsync(ct);
-    }
 }

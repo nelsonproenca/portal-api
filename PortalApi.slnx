@@ -4,5 +4,6 @@
     <Project Path="src/PortalApi.Application/PortalApi.Application.csproj" />
     <Project Path="src/PortalApi.Domain/PortalApi.Domain.csproj" />
     <Project Path="src/PortalApi.Infrastructure/PortalApi.Infrastructure.csproj" />
+    <Project Path="src/PortalApi.Tests/PortalApi.Tests.csproj" />
   </Folder>
 </Solution>

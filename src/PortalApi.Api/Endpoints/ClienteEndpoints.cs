@@ -36,9 +36,8 @@ public static class ClienteEndpoints
             Results.Ok(await service.ListByStatusAsync("ativo", ct)))
         .AllowAnonymous();
 
-        // Cliente (portal, ticket #19): resolve o próprio registro de cliente a
-        // partir do e-mail do JWT do Supabase — equivalente ao antigo
-        // `supabase.from("clientes").select().eq("email", session.email)`.
+        // Cliente (portal): resolve o próprio registro de cliente a partir do e-mail
+        // da sessão (cookie do login por link), nunca de um e-mail enviado pelo front.
         group.MapGet("/me", async (HttpContext http, ClienteService service, CancellationToken ct) =>
         {
             var email = http.User.GetEmail();

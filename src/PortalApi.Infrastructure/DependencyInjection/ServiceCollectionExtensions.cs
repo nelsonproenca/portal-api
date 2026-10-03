@@ -6,14 +6,17 @@ using Microsoft.Extensions.Options;
 using PortalApi.Application.Artefatos;
 using PortalApi.Application.Auth;
 using PortalApi.Application.Clientes;
+using PortalApi.Application.Crm;
 using PortalApi.Application.Email;
 using PortalApi.Application.Etapas;
 using PortalApi.Application.Pedidos;
 using PortalApi.Application.Portal;
 using PortalApi.Application.Projetos;
 using PortalApi.Application.Storage;
+using PortalApi.Application.Uploads;
 using PortalApi.Infrastructure.Data;
 using PortalApi.Infrastructure.Email;
+using PortalApi.Infrastructure.N8n;
 using PortalApi.Infrastructure.Security;
 using PortalApi.Infrastructure.Storage;
 
@@ -68,6 +71,23 @@ public static class ServiceCollectionExtensions
             client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", apiKey);
         });
         services.AddScoped<PortfolioNotificationService>();
+
+        services.AddSingleton(TimeProvider.System);
+        services.Configure<ClienteLoginOptions>(configuration.GetSection(ClienteLoginOptions.SectionName));
+        services.AddScoped<IClienteLoginTokenRepository, ClienteLoginTokenRepository>();
+        services.AddScoped<ClienteLoginService>();
+
+        services.AddSingleton<IUploadStorage, LocalUploadStorage>();
+        services.AddScoped<UploadService>();
+
+        services.AddScoped<ICrmRepository, CrmRepository>();
+        services.AddScoped<LeadService>();
+        services.AddScoped<AnaliseService>();
+        services.AddScoped<AgendamentoService>();
+        services.AddScoped<CadastroCrmService>();
+
+        services.Configure<N8nOptions>(configuration.GetSection(N8nOptions.SectionName));
+        services.AddHttpClient<INotificadorN8n, N8nNotificador>();
 
         return services;
     }

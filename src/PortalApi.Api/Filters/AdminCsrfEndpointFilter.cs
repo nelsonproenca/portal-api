@@ -9,9 +9,9 @@ namespace PortalApi.Api.Filters;
 /// (same-origin, roteada por path). Reutilizado por todos os endpoints de escrita do admin,
 /// não só o de auth (ver spec, ticket #12).
 ///
-/// Só se aplica a quem autenticou via cookie (admin) — Bearer token (cliente, ticket #20)
-/// não é vulnerável a CSRF do mesmo jeito (browser nunca anexa Authorization sozinho em
-/// request cross-site), então não faz sentido exigir esse header dele.
+/// Vale para quem autenticou por cookie: o admin e, desde que o login do cliente passou a ser
+/// cookie (e não mais o Bearer do Supabase), o cliente também. O front manda o header nas
+/// escritas nos dois casos.
 /// </summary>
 public class AdminCsrfEndpointFilter : IEndpointFilter
 {
@@ -19,8 +19,9 @@ public class AdminCsrfEndpointFilter : IEndpointFilter
 
     public async ValueTask<object?> InvokeAsync(EndpointFilterInvocationContext context, EndpointFilterDelegate next)
     {
-        var isAdmin = context.HttpContext.User.IsAdmin();
-        if (isAdmin && !context.HttpContext.Request.Headers.ContainsKey(HeaderName))
+        var user = context.HttpContext.User;
+        var autenticadoPorCookie = user.IsAdmin() || user.IsCliente();
+        if (autenticadoPorCookie && !context.HttpContext.Request.Headers.ContainsKey(HeaderName))
             return Results.Forbid();
 
         return await next(context);

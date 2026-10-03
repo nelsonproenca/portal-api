@@ -33,9 +33,8 @@ public static class ProjetoEndpoints
         })
         .RequireAuthorization("AdminOrClient");
 
-        // Cliente (portal): só os projetos do próprio e-mail — substitui o antigo
-        // `supabase.from("projetos").eq("cliente_id", ...)` que confiava num id
-        // vindo do cliente; aqui o id é resolvido a partir do JWT no servidor.
+        // Cliente (portal): só os projetos do próprio e-mail. O dono é resolvido no
+        // servidor a partir da sessão, nunca de um id vindo do cliente.
         group.MapGet("/mine", async (HttpContext http, ClientAccessService access, CancellationToken ct) =>
         {
             var email = http.User.GetEmail();

@@ -1,9 +1,8 @@
 using System.Threading.RateLimiting;
 using Microsoft.AspNetCore.Authentication.Cookies;
-using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.IdentityModel.Tokens;
 using PortalApi.Api;
 using PortalApi.Api.Endpoints;
 using PortalApi.Infrastructure.Data;
@@ -32,25 +31,9 @@ var authBuilder = builder.Services
         options.Events.OnRedirectToAccessDenied = ctx => { ctx.Response.StatusCode = StatusCodes.Status403Forbidden; return Task.CompletedTask; };
     });
 
-// Cliente (portal do cliente, ticket #19): valida o JWT que o Supabase Auth já
-// emite pro magic-link — mesmo padrão do WatchtowerApi.Api/Program.cs. O
-// frontend continua usando supabase.auth.* sem mudança nenhuma; só o backend
-// passa a aceitar esse token também.
-var supabaseUrl = builder.Configuration["Supabase:Url"];
-if (string.IsNullOrWhiteSpace(supabaseUrl))
-    throw new InvalidOperationException("Supabase:Url está vazio ou ausente. Preencha em appsettings.Production.json / .env.");
-
-authBuilder.AddJwtBearer("SupabaseJwt", options =>
-{
-    options.Authority = $"{supabaseUrl.TrimEnd('/')}/auth/v1";
-    options.Audience = builder.Configuration["Supabase:JwtAudience"] ?? "authenticated";
-    options.RequireHttpsMetadata = true;
-    options.TokenValidationParameters = new TokenValidationParameters
-    {
-        ValidateLifetime = true,
-        ClockSkew = TimeSpan.FromSeconds(30),
-    };
-});
+// Cliente (portal do cliente): cookie próprio, emitido depois que o cliente abre o link enviado por e-mail
+// (ver ClienteAuthEndpoints). Substitui o JWT do Supabase Auth.
+authBuilder.AddClienteCookie();
 
 builder.Services.AddAuthorization(options =>
 {
@@ -58,8 +41,25 @@ builder.Services.AddAuthorization(options =>
     // chamar — a distinção de "o que cada um pode ver" é feita dentro do handler
     // (ClientAccessService), não aqui.
     options.AddPolicy("AdminOrClient", policy => policy
-        .AddAuthenticationSchemes(CookieAuthenticationDefaults.AuthenticationScheme, "SupabaseJwt")
+        .AddAuthenticationSchemes(CookieAuthenticationDefaults.AuthenticationScheme, ClienteAuthEndpoints.Scheme)
         .RequireAuthenticatedUser());
+});
+
+builder.Services.AddClienteAuthPolicies();
+
+// Política "Admin" e rate limits dos formulários públicos do CRM (ver CrmEndpoints).
+builder.Services.AddCrmPolicies();
+
+// ─── IP real atrás do Caddy ───────────────────────────────────────────────────
+
+// O container só é alcançável pelas redes Docker (o Caddy é o único ponto público), então confiar no
+// X-Forwarded-For é seguro aqui. Sem isso, o rate limit por IP veria só o IP do Caddy e todos os visitantes
+// dividiriam o mesmo limite.
+builder.Services.Configure<ForwardedHeadersOptions>(options =>
+{
+    options.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
+    options.KnownIPNetworks.Clear();
+    options.KnownProxies.Clear();
 });
 
 // ─── Rate limiting (login do admin — ver ticket #14) ───────────────────────────
@@ -108,14 +108,15 @@ using (var scope = app.Services.CreateScope())
 if (args.Length > 0 && args[0] == "seed-admin")
     return await SeedAdminCommand.RunAsync(args, app.Services);
 
-if (args.Length > 0 && args[0] == "import-clientes")
-    return await ImportClientesCommand.RunAsync(args, app.Services);
+if (args.Length > 0 && args[0] == "import-crm")
+    return await ImportCrmCommand.RunAsync(args, app.Services);
 
-if (args.Length > 0 && args[0] == "import-projetos")
-    return await ImportProjetosCommand.RunAsync(args, app.Services);
+if (args.Length > 0 && args[0] == "import-uploads")
+    return await ImportUploadsCommand.RunAsync(args, app.Services);
 
 // ─── Middleware pipeline ──────────────────────────────────────────────────────
 
+app.UseForwardedHeaders();
 app.UseRateLimiter();
 app.UseAuthentication();
 app.UseAuthorization();
@@ -151,6 +152,9 @@ app.MapProjetoEndpoints();
 app.MapEtapaEndpoints();
 app.MapArtefatoEndpoints();
 app.MapPedidoEndpoints();
+app.MapCrmEndpoints();
+app.MapClienteAuthEndpoints();
+app.MapUploadEndpoints();
 
 app.Run();
 return 0;
