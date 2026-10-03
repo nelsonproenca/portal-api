@@ -143,6 +143,27 @@ public class CrmEndpointsTests
         Assert.Equal(HttpStatusCode.Conflict, r.StatusCode);
     }
 
+    [Fact]
+    public async Task Admin_exclui_lead_com_cookie_e_csrf_e_so_ele()
+    {
+        await using var api = await CrmApi.StartAsync();
+        var id = (await (await api.Http.SendAsync(CrmApi.Req(HttpMethod.Post, "/leads", LeadValido))).Content.ReadFromJsonAsync<CriadoDto>())!.Id;
+        var url = $"/leads/{id}";
+        var admin = await api.LoginAsync("admin");
+        await api.SeedClienteAsync("ana@acme.com");
+        var cliente = await api.LoginClienteAsync("ana@acme.com");
+
+        Assert.Equal(HttpStatusCode.Unauthorized, (await api.Http.SendAsync(CrmApi.Req(HttpMethod.Delete, url))).StatusCode);
+        Assert.Equal(HttpStatusCode.Unauthorized, (await api.Http.SendAsync(CrmApi.Req(HttpMethod.Delete, url, cookie: cliente, csrf: true))).StatusCode);
+        Assert.Equal(HttpStatusCode.Forbidden, (await api.Http.SendAsync(CrmApi.Req(HttpMethod.Delete, url, cookie: admin))).StatusCode);
+        Assert.Equal(HttpStatusCode.Unauthorized, (await api.Http.SendAsync(CrmApi.Req(HttpMethod.Delete, url, segredo: CrmApi.Segredo))).StatusCode); // segredo do n8n não exclui
+
+        Assert.Equal(HttpStatusCode.NoContent, (await api.Http.SendAsync(CrmApi.Req(HttpMethod.Delete, url, cookie: admin, csrf: true))).StatusCode);
+        Assert.Equal(HttpStatusCode.NotFound, (await api.Http.SendAsync(CrmApi.Req(HttpMethod.Delete, url, cookie: admin, csrf: true))).StatusCode);
+        var restantes = await (await api.Http.SendAsync(CrmApi.Req(HttpMethod.Get, "/leads", cookie: admin))).Content.ReadFromJsonAsync<List<LeadDto>>();
+        Assert.Empty(restantes!);
+    }
+
     // ─── n8n: só com o segredo ────────────────────────────────────────────────
 
     [Fact]

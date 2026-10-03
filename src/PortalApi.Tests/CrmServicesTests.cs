@@ -92,6 +92,24 @@ public class LeadServiceTests
     }
 }
 
+public class LeadExclusaoTests
+{
+    [Fact]
+    public async Task Excluir_remove_so_o_lead_pedido_e_devolve_false_para_id_desconhecido()
+    {
+        var db = TestDb.New();
+        var service = new LeadService(new CrmRepository(db), new FakeNotificador());
+        var a = (await service.CriarAsync(new("A", null, "a@a.com", null, "x"), default)).Valor!.Id;
+        var b = (await service.CriarAsync(new("B", null, "b@b.com", null, "x"), default)).Valor!.Id;
+
+        Assert.True(await service.ExcluirAsync(a, default));
+
+        Assert.Equal(b, (await db.LeadsIa.SingleAsync()).Id);
+        Assert.False(await service.ExcluirAsync(a, default));
+        Assert.False(await service.ExcluirAsync(Guid.NewGuid(), default));
+    }
+}
+
 public class AnaliseServiceTests
 {
     private static (AnaliseService Service, PortalDbContext Db, FakeNotificador N8n) Novo()

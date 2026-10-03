@@ -164,6 +164,11 @@ public static class CrmEndpoints
         .AddEndpointFilter<AdminCsrfEndpointFilter>()
         .RequireAuthorization(AdminPolicy);
 
+        app.MapDelete("/leads/{id:guid}", async (Guid id, LeadService service, CancellationToken ct) =>
+            await service.ExcluirAsync(id, ct) ? Results.NoContent() : Results.NotFound())
+        .AddEndpointFilter<AdminCsrfEndpointFilter>()
+        .RequireAuthorization(AdminPolicy);
+
         // Agendamentos
         app.MapGet("/agendamentos", async (AgendamentoService service, CancellationToken ct) =>
             Results.Ok(await service.ListarAsync(ct)))

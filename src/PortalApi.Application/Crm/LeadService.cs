@@ -47,6 +47,15 @@ public class LeadService(ICrmRepository repository, INotificadorN8n n8n)
         return CrmResult<LeadDto>.Sucesso(ToDto(lead));
     }
 
+    /// <summary>Remove o lead (limpeza de testes ou pedido de exclusão de dados). False se não existir.</summary>
+    public async Task<bool> ExcluirAsync(Guid id, CancellationToken ct)
+    {
+        var lead = await repository.FindAsync<LeadIa>(id, ct);
+        if (lead is null) return false;
+        await repository.RemoveAsync(lead, ct);
+        return true;
+    }
+
     /// <summary>Callback do n8n com a análise da IA.</summary>
     public async Task<CrmResult<LeadDto>> RegistrarAnaliseAsync(Guid id, string? analiseIa, CancellationToken ct)
     {
