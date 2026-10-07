@@ -1,9 +1,9 @@
 # PortalApi
 
 Backend do Portal do Cliente (site institucional `nelson-proenca-info.com.br`) — projeto independente do
-Watchtower, ver [spec completa (issue #12)](https://github.com/nelsonproenca/ai-agent-playground/issues/12).
+Watchtower, ver [spec completa (issue #12)](https://github.com/nelsonproenca/portal-web/issues/12).
 
-Este repositório cobre o ticket [#13](https://github.com/nelsonproenca/ai-agent-playground/issues/13) e os
+Este repositório cobre o ticket [#13](https://github.com/nelsonproenca/portal-web/issues/13) e os
 seguintes da mesma spec.
 
 ## Stack
@@ -42,7 +42,7 @@ dotnet ef database update --project src/PortalApi.Infrastructure --startup-proje
 
 ## Deploy
 
-Roda na VPS (209.61.37.142) via `docker-compose.yml` deste repo — dois containers (`portal-api` +
+Roda na VPS via `docker-compose.yml` deste repo — dois containers (`portal-api` +
 `portal-mysql`). O Caddy real da VPS não é do Watchtower — é um container (`n8n-caddy-1`) definido em
 `/opt/n8n/docker-compose.yml`, na rede Docker `n8n_default`, e alcança outros serviços pelo **nome do
 container**, não por `localhost` (é assim que ele já fala com `watchtower-stack-watchtower-api-1:5000`
