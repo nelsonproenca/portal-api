@@ -21,12 +21,13 @@ services:
       - "127.0.0.1:3306:3306"
     networks:
       # default: rede implícita deste compose, onde o portal-api já fala com este container.
-      # beautyhairapp_shared: reaproveitado pelo beautyhairapp-api (banco próprio dentro deste
-      # mesmo container MySQL, decisão de 14/09/2026 — ver saas/beautyhairapp/PRODUCT.md) — rede
+      # beautyhairapp_shared / plpautoservice_shared: reaproveitadas pelas APIs dos outros SaaS
+      # (banco próprio dentro deste mesmo container MySQL, ver PRODUCT.md de cada um) — rede
       # dedicada só pra isso, em vez de expor o MySQL na n8n_default (que teria n8n/claw3d/
       # openclaw como vizinhos sem necessidade de falar com o banco).
       - default
       - beautyhairapp_shared
+      - plpautoservice_shared
 
   portal-api:
     build: .
@@ -63,10 +64,13 @@ services:
 networks:
   n8n_default:
     external: true
-  # Declarada (não external) aqui — este compose é o "dono" dela. O compose do
-  # beautyhairapp-api referencia como external:true; precisa que este suba primeiro.
+  # Declaradas (não external) aqui — este compose é o "dono" delas. Os compose do
+  # beautyhairapp-api/plpautoservice-api referenciam como external:true; precisa que este
+  # suba primeiro.
   beautyhairapp_shared:
     name: beautyhairapp_shared
+  plpautoservice_shared:
+    name: plpautoservice_shared
 
 volumes:
   portal-mysql-data:
