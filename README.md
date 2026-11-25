@@ -1,7 +1,6 @@
 # PortalApi
 
-Backend do Portal do Cliente (site institucional `nelson-proenca-info.com.br`) — projeto independente do
-Watchtower, ver [spec completa (issue #12)](https://github.com/nelsonproenca/portal-web/issues/12).
+Backend do Portal do Cliente (site institucional `nelson-proenca-info.com.br`), ver [spec completa (issue #12)](https://github.com/nelsonproenca/portal-web/issues/12).
 
 Este repositório cobre o ticket [#13](https://github.com/nelsonproenca/portal-web/issues/13) e os
 seguintes da mesma spec.
